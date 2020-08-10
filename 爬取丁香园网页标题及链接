@@ -1,0 +1,127 @@
+import requests
+from bs4 import BeautifulSoup
+import traceback
+import re
+import xlwt
+
+
+def getHTMLText(url,code = 'utf-8'):
+    #头部的定义，自己在网页中可以获取（网页右击检查，network中的header）
+    headers={
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36'
+        }
+    response=requests.get(url,headers=headers)
+    if response.status_code==200:  #只有status_code为200时才表示响应正确
+        return response.text
+    return None
+
+def getOnePage(url,listall):
+    html = getHTMLText(url)
+    soup = BeautifulSoup(html,'html.parser')
+    tbody = soup.find_all('tbody')[4]
+    tr = tbody.find_all('tr')
+    for i in tr:
+        title_link = i.find('td',class_='news')
+        times = i.find('td',class_='by')
+        link = title_link.a['href']
+        title = title_link.a.string
+        time = times.em.string
+        listall.append([title,link,time])
+
+
+def getNewlist(listall,newlist):
+    def isin(n):
+        if n[1] != 'javascript:;':
+            return n
+    a = list(filter(isin,listall))
+    for i in a:
+        newlist.append(i)
+
+
+
+def main(num):
+    f = open('shuju.txt', 'a')
+    for i in range(num):
+        url = 'http://radiology.dxy.cn/bbs/board/89?order=2&tpg=' + str(num)
+        listall = []
+        newlist = []
+        try:
+            getOnePage(url, listall)
+            getNewlist(listall, newlist)
+            for j in range(len(newlist)):
+                f.write(newlist[j][0] + '\t' + newlist[j][1] + '\t' + newlist[j][2] + '\n')
+        except:
+            continue
+        # print(newlist)
+    f.close()
+
+
+
+    #
+    fopen = open('shuju.txt', 'r')
+    lines = fopen.readlines()
+    excelname = 'try.xls'
+    file = xlwt.Workbook(encoding='utf-8')
+    worksheet = file.add_sheet('my_worksheet')
+    i = 0
+    for line in lines:
+        # line = line.strip('\n')
+        line = line.split('\t')
+        a = line[0]
+        b = line[1]
+        c = line[2]
+        worksheet.write(i, 0, a)
+        worksheet.write(i, 1, b)
+        worksheet.write(i, 2, c)
+        i += 1
+    file.save(excelname)
+
+
+main(3000)
+
+
+
+
+
+
+
+
+
+
+
+
+# workbook = xlwt.Workbook(encoding='utf-8')
+# worksheet = workbook.add_sheet('my_worksheet')
+# for i in range(len(listall)):
+#     worksheet.write(i,0,label = listall[i][0])
+#     worksheet.write(i,1,label = listall[i][1])
+#     worksheet.write(i,2,label = listall[i][2])
+#
+# #
+# workbook.save('excel_test.xls')
+
+
+
+# print(tr[0])
+
+
+
+
+
+
+
+
+
+# tr = soup.find_all('tr',class_='even hoverClass')
+# for i in tr:
+#     tr_html = str(i)
+#     souptr = BeautifulSoup(tr_html, 'html.parser')
+#     souplink = souptr.td.a['href']
+#     souptitle = souptr.td.next_sibling.a.string
+#     souptime = souptr.td.next_sibling.next_sibling.em.string
+#     # souptitle = souptd.a.string
+#     # print(souplink)
+#     # souptitle = souptd.a['title']
+#     print("{}\t{}\t{}".format(souptitle,souplink,souptime))
+
+# print(td)
